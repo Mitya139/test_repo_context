@@ -1,95 +1,133 @@
 #!/usr/bin/env python3
-"""Минимальная игра «Змейка» в терминале (curses)."""
+"""Минимальная кроссплатформенная игра «Змейка» на tkinter (работает в Windows)."""
 
-import curses
 import random
-import time
+import tkinter as tk
+from tkinter import messagebox
 
 
-def place_food(height, width, snake_set):
-    while True:
-        food = (random.randint(1, height - 2), random.randint(1, width - 2))
-        if food not in snake_set:
-            return food
+CELL_SIZE = 20
+GRID_WIDTH = 30
+GRID_HEIGHT = 20
+TICK_MS = 110
 
 
-def main(stdscr):
-    curses.curs_set(0)
-    stdscr.nodelay(True)
-    stdscr.timeout(120)
-    stdscr.keypad(True)
+class SnakeGame:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Snake")
 
-    height, width = stdscr.getmaxyx()
-    if height < 10 or width < 20:
-        stdscr.clear()
-        stdscr.addstr(0, 0, "Окно слишком маленькое. Нужно минимум 20x10.")
-        stdscr.refresh()
-        stdscr.getch()
-        return
+        self.canvas = tk.Canvas(
+            root,
+            width=GRID_WIDTH * CELL_SIZE,
+            height=GRID_HEIGHT * CELL_SIZE,
+            bg="#111111",
+            highlightthickness=0,
+        )
+        self.canvas.pack(padx=8, pady=8)
 
-    snake = [(height // 2, width // 2), (height // 2, width // 2 - 1), (height // 2, width // 2 - 2)]
-    snake_set = set(snake)
-    direction = (0, 1)
-    food = place_food(height, width, snake_set)
-    score = 0
+        self.score_var = tk.StringVar(value="Score: 0")
+        self.score_label = tk.Label(root, textvariable=self.score_var, font=("Arial", 12))
+        self.score_label.pack(pady=(0, 8))
 
-    key_to_dir = {
-        curses.KEY_UP: (-1, 0),
-        curses.KEY_DOWN: (1, 0),
-        curses.KEY_LEFT: (0, -1),
-        curses.KEY_RIGHT: (0, 1),
-        ord("w"): (-1, 0),
-        ord("s"): (1, 0),
-        ord("a"): (0, -1),
-        ord("d"): (0, 1),
-    }
+        start_x = GRID_WIDTH // 2
+        start_y = GRID_HEIGHT // 2
+        self.snake = [(start_x, start_y), (start_x - 1, start_y), (start_x - 2, start_y)]
+        self.direction = (1, 0)
+        self.pending_direction = self.direction
+        self.score = 0
+        self.running = True
 
-    while True:
-        stdscr.erase()
-        stdscr.border()
-        stdscr.addstr(0, 2, f" Snake | Score: {score} ")
-        stdscr.addch(food[0], food[1], "*")
+        self.food = self.place_food()
 
-        for i, (y, x) in enumerate(snake):
-            stdscr.addch(y, x, "@" if i == 0 else "o")
+        self.root.bind("<Up>", lambda _e: self.set_direction(0, -1))
+        self.root.bind("<Down>", lambda _e: self.set_direction(0, 1))
+        self.root.bind("<Left>", lambda _e: self.set_direction(-1, 0))
+        self.root.bind("<Right>", lambda _e: self.set_direction(1, 0))
 
-        stdscr.refresh()
+        self.root.bind("w", lambda _e: self.set_direction(0, -1))
+        self.root.bind("s", lambda _e: self.set_direction(0, 1))
+        self.root.bind("a", lambda _e: self.set_direction(-1, 0))
+        self.root.bind("d", lambda _e: self.set_direction(1, 0))
 
-        key = stdscr.getch()
-        if key == ord("q"):
-            break
+        self.root.bind("q", lambda _e: self.end_game())
+        self.root.bind("<Escape>", lambda _e: self.end_game())
 
-        if key in key_to_dir:
-            new_dir = key_to_dir[key]
-            if (new_dir[0] != -direction[0]) or (new_dir[1] != -direction[1]):
-                direction = new_dir
+        self.draw()
+        self.tick()
 
-        head_y, head_x = snake[0]
-        new_head = (head_y + direction[0], head_x + direction[1])
+    def set_direction(self, dx, dy):
+        if not self.running:
+            return
 
-        hit_wall = new_head[0] in (0, height - 1) or new_head[1] in (0, width - 1)
-        hit_self = new_head in snake_set
-        if hit_wall or hit_self:
-            break
+        curr_dx, curr_dy = self.direction
+        if (dx, dy) == (-curr_dx, -curr_dy):
+            return
+        self.pending_direction = (dx, dy)
 
-        snake.insert(0, new_head)
-        snake_set.add(new_head)
+    def place_food(self):
+        snake_set = set(self.snake)
+        while True:
+            pos = (random.randint(0, GRID_WIDTH - 1), random.randint(0, GRID_HEIGHT - 1))
+            if pos not in snake_set:
+                return pos
 
-        if new_head == food:
-            score += 1
-            food = place_food(height, width, snake_set)
+    def tick(self):
+        if not self.running:
+            return
+
+        self.direction = self.pending_direction
+        dx, dy = self.direction
+        head_x, head_y = self.snake[0]
+        new_head = (head_x + dx, head_y + dy)
+
+        out_of_bounds = (
+            new_head[0] < 0
+            or new_head[0] >= GRID_WIDTH
+            or new_head[1] < 0
+            or new_head[1] >= GRID_HEIGHT
+        )
+        hit_self = new_head in self.snake
+        if out_of_bounds or hit_self:
+            self.running = False
+            self.draw()
+            messagebox.showinfo("Game Over", f"Ты проиграл. Счет: {self.score}")
+            self.root.destroy()
+            return
+
+        self.snake.insert(0, new_head)
+
+        if new_head == self.food:
+            self.score += 1
+            self.score_var.set(f"Score: {self.score}")
+            self.food = self.place_food()
         else:
-            tail = snake.pop()
-            snake_set.remove(tail)
+            self.snake.pop()
 
-        time.sleep(0.02)
+        self.draw()
+        self.root.after(TICK_MS, self.tick)
 
-    stdscr.nodelay(False)
-    stdscr.addstr(height // 2, max(2, width // 2 - 8), f"Game Over! Score: {score}")
-    stdscr.addstr(height // 2 + 1, max(2, width // 2 - 12), "Нажми любую клавишу...")
-    stdscr.refresh()
-    stdscr.getch()
+    def draw_cell(self, x, y, color):
+        x1 = x * CELL_SIZE
+        y1 = y * CELL_SIZE
+        x2 = x1 + CELL_SIZE
+        y2 = y1 + CELL_SIZE
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="#222222")
+
+    def draw(self):
+        self.canvas.delete("all")
+        self.draw_cell(self.food[0], self.food[1], "#ffd166")
+
+        for i, (x, y) in enumerate(self.snake):
+            color = "#06d6a0" if i == 0 else "#118ab2"
+            self.draw_cell(x, y, color)
+
+    def end_game(self):
+        self.running = False
+        self.root.destroy()
 
 
 if __name__ == "__main__":
-    curses.wrapper(main)
+    app = tk.Tk()
+    SnakeGame(app)
+    app.mainloop()

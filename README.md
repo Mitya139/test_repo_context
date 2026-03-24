@@ -1,11 +1,24 @@
 # test_repo_context
 
-Минимальная змейка на Python (терминальная версия на `curses`).
+Минимальная кроссплатформенная змейка на Python (GUI на `tkinter`).
 
 ## Запуск
+
+### Windows (PowerShell)
+
+```powershell
+py .\snake.py
+```
+
+Если команда `python` не работает, используй `py` (стандартный launcher на Windows).
+
+### Linux/macOS
 
 ```bash
 python3 snake.py
 ```
 
-Управление: стрелки или `WASD`, выход — `q`.
+## Управление
+
+- Стрелки или `WASD` — движение
+- `Q` или `Esc` — выход
