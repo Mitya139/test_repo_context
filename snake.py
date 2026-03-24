@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""Минимальная кроссплатформенная игра «Змейка» на tkinter (работает в Windows)."""
-
 import random
 import tkinter as tk
 from tkinter import messagebox
