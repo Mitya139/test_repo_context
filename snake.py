@@ -7,7 +7,6 @@ import random
 import time
 import tkinter as tk
 from dataclasses import dataclass
-from pathlib import Path
 
 
 CELL_SIZE = 24
@@ -20,8 +19,6 @@ FPS = 60
 INITIAL_MOVE_INTERVAL = 0.11
 MIN_MOVE_INTERVAL = 0.055
 SPEEDUP_PER_POINT = 0.002
-
-ASSETS_DIR = Path(__file__).resolve().parent / "assets" / "fruits"
 
 
 @dataclass(frozen=True)
@@ -59,13 +56,25 @@ class SnakeGame:
         self.score_var = tk.StringVar(value="Score: 0")
         self.best_var = tk.StringVar(value="Best: 0")
 
-        self.score_label = tk.Label(self.frame, textvariable=self.score_var, fg="#e9eef9", bg="#111318", font=("Segoe UI", 12, "bold"))
+        self.score_label = tk.Label(
+            self.frame,
+            textvariable=self.score_var,
+            fg="#e9eef9",
+            bg="#111318",
+            font=("Segoe UI", 12, "bold"),
+        )
         self.score_label.grid(row=1, column=0, sticky="w", pady=(8, 0))
 
-        self.best_label = tk.Label(self.frame, textvariable=self.best_var, fg="#a8b4cc", bg="#111318", font=("Segoe UI", 11))
+        self.best_label = tk.Label(
+            self.frame,
+            textvariable=self.best_var,
+            fg="#a8b4cc",
+            bg="#111318",
+            font=("Segoe UI", 11),
+        )
         self.best_label.grid(row=1, column=1, sticky="e", pady=(8, 0))
 
-        self.fruit_images = self._load_fruit_images()
+        self.fruit_images = self._build_fruit_images()
         self.fruit_fallback_colors = {
             "apple": "#ff5c5c",
             "banana": "#ffd166",
@@ -103,16 +112,102 @@ class SnakeGame:
         self.draw_scene()
         self.game_loop()
 
-    def _load_fruit_images(self) -> dict[str, tk.PhotoImage]:
+    def _build_fruit_images(self) -> dict[str, tk.PhotoImage]:
+        """Создаёт маленькие pixel-art фрукты в памяти (без файлов на диске)."""
+        palette = {
+            "R": "#dd3b3b",
+            "Y": "#ffd166",
+            "P": "#8c5bff",
+            "S": "#ff4d88",
+            "G": "#32c26b",
+            "B": "#7f4d2a",
+            "W": "#fef3c7",
+        }
+
+        sprites = {
+            "apple": [
+                "................",
+                ".......B........",
+                "......GGG.......",
+                ".....RRRRR......",
+                "....RRRRRRR.....",
+                "....RRRRRRR.....",
+                "...RRRRRRRRR....",
+                "...RRRRRRRRR....",
+                "...RRRRRRRRR....",
+                "....RRRRRRR.....",
+                "....RRRRRRR.....",
+                ".....RRRRR......",
+                "................",
+                "................",
+                "................",
+                "................",
+            ],
+            "banana": [
+                "................",
+                "................",
+                "..........YY....",
+                "........YYYY....",
+                "......YYYYY.....",
+                ".....YYYYY......",
+                "....YYYYY.......",
+                "...YYYYY........",
+                "..YYYYY.........",
+                ".YYYYY..........",
+                ".YYYY...........",
+                "..YY............",
+                "................",
+                "................",
+                "................",
+                "................",
+            ],
+            "grapes": [
+                ".......B........",
+                "......GG........",
+                ".....PPP........",
+                "....PPPPP.......",
+                "...PPPPPPP......",
+                "....PPPPP.......",
+                "...PPPPPPP......",
+                "....PPPPP.......",
+                "...PPPPPPP......",
+                "....PPPPP.......",
+                ".....PPP........",
+                "................",
+                "................",
+                "................",
+                "................",
+                "................",
+            ],
+            "strawberry": [
+                "......GGGG......",
+                ".....GGGGGG.....",
+                "......GGGG......",
+                "......SSSS......",
+                ".....SSSSSS.....",
+                "....SSWSSWSS....",
+                "....SSSSSSSS....",
+                "....SWSSWSSS....",
+                ".....SSSSSS.....",
+                ".....SSWSSS.....",
+                "......SSSS......",
+                ".......SS.......",
+                "................",
+                "................",
+                "................",
+                "................",
+            ],
+        }
+
         images: dict[str, tk.PhotoImage] = {}
-        for fruit in FRUIT_TYPES:
-            path = ASSETS_DIR / f"{fruit.key}.ppm"
-            if path.exists():
-                img = tk.PhotoImage(file=str(path))
-                zoom = max(1, CELL_SIZE // max(1, img.width()))
-                if zoom > 1:
-                    img = img.zoom(zoom, zoom)
-                images[fruit.key] = img
+        for key, rows in sprites.items():
+            base = tk.PhotoImage(width=16, height=16)
+            for y, row in enumerate(rows):
+                for x, ch in enumerate(row):
+                    if ch in palette:
+                        base.put(palette[ch], (x, y))
+            zoom = max(1, CELL_SIZE // 16)
+            images[key] = base.zoom(zoom, zoom)
         return images
 
     def queue_direction(self, direction: tuple[int, int]):
@@ -200,7 +295,10 @@ class SnakeGame:
         if new_head == self.food_pos:
             self.score += self.food_type.score
             self.score_var.set(f"Score: {self.score}")
-            self.move_interval = max(MIN_MOVE_INTERVAL, self.move_interval - SPEEDUP_PER_POINT * self.food_type.score)
+            self.move_interval = max(
+                MIN_MOVE_INTERVAL,
+                self.move_interval - SPEEDUP_PER_POINT * self.food_type.score,
+            )
             self.spawn_food()
         else:
             self.snake.pop()
@@ -239,11 +337,32 @@ class SnakeGame:
     def draw_overlay(self, title: str, lines: list[str]):
         cx = BOARD_WIDTH // 2
         cy = BOARD_HEIGHT // 2
-        self.canvas.create_rectangle(cx - 220, cy - 120, cx + 220, cy + 120, fill="#000000", outline="#5c6a82", width=2, stipple="gray50")
-        self.canvas.create_text(cx, cy - 70, text=title, fill="#f8f9ff", font=("Segoe UI", 24, "bold"))
+        self.canvas.create_rectangle(
+            cx - 220,
+            cy - 120,
+            cx + 220,
+            cy + 120,
+            fill="#000000",
+            outline="#5c6a82",
+            width=2,
+            stipple="gray50",
+        )
+        self.canvas.create_text(
+            cx,
+            cy - 70,
+            text=title,
+            fill="#f8f9ff",
+            font=("Segoe UI", 24, "bold"),
+        )
 
         for idx, line in enumerate(lines):
-            self.canvas.create_text(cx, cy - 15 + idx * 28, text=line, fill="#d8dfef", font=("Segoe UI", 13))
+            self.canvas.create_text(
+                cx,
+                cy - 15 + idx * 28,
+                text=line,
+                fill="#d8dfef",
+                font=("Segoe UI", 13),
+            )
 
     def draw_scene(self):
         self.draw_board()
