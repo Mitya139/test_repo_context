@@ -1,4 +1,4 @@
-# test_repo_context
+# AAAAAAAAAAAAAAAAAAAAAAAAAA
 
 Крутая кроссплатформенная змейка на Python (`tkinter`) с:
 
