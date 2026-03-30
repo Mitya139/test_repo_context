@@ -4,3 +4,4 @@ _Tools: Perplexity, Dovetail, NotebookLM._
 
 | Tool | Pricing | Best Use Cases | Supported Artefacts |
 |---|---|---|---|
+gfdsgfdsgfdsgf
