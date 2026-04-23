@@ -1,6 +1,6 @@
 # Product Onepager
 
-## BIG Problem:
+## SMALL Problem:
 Traders at prediction markets face missed arbitrage opportunities daily due to the fast-moving nature of odds and fragmented information across platforms. This leads to substantial financial losses or reduced returns. Existing tools are expensive, slow, and not tailored to the unique demands of prediction market arbitrage, causing delays that prevent timely action.
 
 ## Who feels this pain:
