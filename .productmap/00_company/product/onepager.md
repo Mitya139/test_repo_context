@@ -1,7 +1,7 @@
 # Product Onepager
 
 ## Problem:
-Traders at prediction markets face missed arbitrage opportunities daily due to the fast-moving nature of odds and fragmented information across platforms. This leads to substantial financial losses or reduced returns. Existing tools are expensive, slow, and not tailored to the unique demands of prediction market arbitrage, causing delays that prevent timely action.
+Traders in prediction markets face missed arbitrage opportunities daily due to the fast-moving nature of odds and fragmented information across platforms. This leads to substantial financial losses or reduced returns. Existing tools are expensive, slow, and not tailored to the unique demands of prediction market arbitrage, causing delays that prevent timely action.
 
 ## Who feels this pain:
 Professional and semi-professional arbitrage traders, as well as active prediction market participants who monitor multiple markets simultaneously. These users typically have moderate to high experience levels and trade frequently, seeking efficient, cost-effective tools to capture fleeting arbitrage chances.
